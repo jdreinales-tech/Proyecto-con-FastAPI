@@ -1,0 +1,10 @@
+#Entorno virtual y Python 
+__pycache__/
+*.pyc
+.pytest_cache/
+
+#Variables de entorno
+.env
+
+#Base de datos
+*.db

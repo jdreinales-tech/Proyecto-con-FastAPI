@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    container_name: fastapi_biblioteca
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    restart: always

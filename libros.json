@@ -1,0 +1,27 @@
+[
+    {
+        "id": 1,
+        "titulo": "El principito",
+        "autor": "Antoine de Saint-Euxpéry",
+        "pestado": false,
+        "prestado": true
+    },
+    {
+        "id": 3,
+        "titulo": "1984",
+        "autor": "George Orwell",
+        "prestado": false
+    },
+    {
+        "id": 4,
+        "titulo": "libro4",
+        "autor": "persona4",
+        "prestado": true
+    },
+    {
+        "id": 5,
+        "titulo": "Don Quijote de la Mancha",
+        "autor": "Miguel de Cervantes",
+        "prestado": false
+    }
+]
