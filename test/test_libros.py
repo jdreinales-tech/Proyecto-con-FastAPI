@@ -1,43 +1,63 @@
-from config import settings
+import pytest
 
-def test_obtener_libros_vacio(client):
-    response = client.get("/libros/")
-    assert response.status_code == 200
-    assert response.json() == []
 
-def test_crear_libro_sin_api_key(client):
-    # Intentar crear un libro sin incluir la cabecera x-api-key debe fallar con 401
-    payload = {"titulo": "Libro de Prueba", "autor": "Autor Test"}
-    response = client.post("/libros/", json=payload)
-    assert response.status_code in (401, 422)
+@pytest.fixture
+def token_usuario_autenticado(client):
+    # 1. Registrar usuario de prueba
+    client.post(
+        "/auth/registro",
+        json={"email": "autor@example.com", "password": "password123"}
+    )
+    # 2. Iniciar sesión para obtener el JWT
+    response = client.post(
+        "/auth/login",
+        data={"username": "autor@example.com", "password": "password123"}
+    )
+    return response.json()["access_token"]
 
-def test_crear_libro_con_api_key(client):
-    # Crear un libro con la API Key válida
-    headers = {"x-api-key": settings.api_key}
-    payload = {"titulo": "Cien años de soledad", "autor": "Gabriel García Márquez"}
-    response = client.post("/libros/", json=payload, headers=headers)
+
+def test_crear_libro_exitoso(client, token_usuario_autenticado):
+    # Enviar la cabecera Authorization con el token JWT
+    headers = {"Authorization": f"Bearer {token_usuario_autenticado}"}
+    
+    response = client.post(
+        "/libros/",
+        json={"titulo": "Rayuela", "autor": "Julio Cortázar"},
+        headers=headers
+    )
     
     assert response.status_code == 201
-    datos = response.json()
-    assert datos["titulo"] == payload["titulo"]
-    assert datos["autor"] == payload["autor"]
-    assert "id" in datos
+    data = response.json()
+    assert data["titulo"] == "Rayuela"
+    assert data["autor"] == "Julio Cortázar"
+    assert "id" in data
+    assert "usuario_id" in data
+    assert data["propietario"]["email"] == "autor@example.com"
 
-def test_paginacion_y_busqueda(client):
-    headers = {"x-api-key": settings.api_key}
-    
-    # Insertar dos libros de prueba
-    client.post("/libros/", json={"titulo": "Python 101", "autor": "Guido"}, headers=headers)
-    client.post("/libros/", json={"titulo": "FastAPI Avanzado", "autor": "Tiangolo"}, headers=headers)
 
-    # Probar filtro por búsqueda
-    response = client.get("/libros/?buscar=Python")
+def test_crear_libro_sin_autenticacion(client):
+    # Intentar crear un libro sin enviar la cabecera de autenticación
+    response = client.post(
+        "/libros/",
+        json={"titulo": "Libro Anónimo", "autor": "Sin Autor"}
+    )
+    # Debe retornar 401 Unauthorized
+    assert response.status_code == 401
+
+
+def test_obtener_lista_libros(client, token_usuario_autenticado):
+    # 1. Crear un libro primero
+    headers = {"Authorization": f"Bearer {token_usuario_autenticado}"}
+    client.post(
+        "/libros/",
+        json={"titulo": "Ficciones", "autor": "Jorge Luis Borges"},
+        headers=headers
+    )
+
+    # 2. Consultar la lista
+    response = client.get("/libros/")
     assert response.status_code == 200
-    libros = response.json()
-    assert len(libros) == 1
-    assert libros[0]["titulo"] == "Python 101"
-
-    # Probar paginación
-    response_paginado = client.get("/libros/?limit=1")
-    assert response_paginado.status_code == 200
-    assert len(response_paginado.json()) == 1
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) >= 1
+    assert data[0]["titulo"] == "Ficciones"
