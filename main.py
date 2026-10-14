@@ -1,10 +1,20 @@
 import time
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app import models
 from app.database import engine
 from app.routers import libros, auth
 
+app= FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 # 1. Crear las tablas en la base de datos si no existen
 models.Base.metadata.create_all(bind=engine)
 
