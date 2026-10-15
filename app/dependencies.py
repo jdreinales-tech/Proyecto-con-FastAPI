@@ -7,32 +7,19 @@ from app import models, schemas
 from app.database import get_db
 from config import settings
 
-# Indica a FastAPI que el token se obtiene de la ruta /auth/login
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
-
-def exigir_rol_admin(current_user: UsuarioDB = Depends(obtener_usuario_actual)):
-    if getattr(current_user, "role", "user") != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acceso denegado. Se requieren privilegios de administrador." 
-        )
-    return current_user
-
-
+# 1. Primero defines la función que busca el usuario
 def obtener_usuario_actual(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ) -> models.UsuarioDB:
-    
     exception_auth = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="No se pudieron validar las credenciales de autenticación",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
     try:
-        # Decodificar el JWT token usando la clave secreta
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         email: str = payload.get("sub")
         if email is None:
@@ -41,9 +28,18 @@ def obtener_usuario_actual(
     except JWTError:
         raise exception_auth
 
-    # Buscar el usuario correspondiente en la base de datos
     usuario = db.query(models.UsuarioDB).filter(models.UsuarioDB.email == token_data.email).first()
     if usuario is None:
         raise exception_auth
         
     return usuario
+
+
+# 2. Después defines la que exige el rol (porque ya sabe que existe la de arriba)
+def exigir_rol_admin(current_user: UsuarioDB = Depends(obtener_usuario_actual)):
+    if getattr(current_user, "role", "user") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso denegado. Se requieren privilegios de administrador." 
+        )
+    return current_user
