@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app import models
 from app.database import engine
-from app.routers import libros, auth
+from app.routers import libros, auth, admin
 
 # 1. Inicializar la app de FastAPI UNA SOLA VEZ
 app = FastAPI(title="API de la biblioteca con FastAPI y PostgreSQL")
