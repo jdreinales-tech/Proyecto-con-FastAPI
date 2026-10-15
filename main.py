@@ -40,5 +40,3 @@ async def manejador_errores_globales(request: Request, exc: Exception):
 # 5. Incluir los routers
 app.include_router(auth.router)
 app.include_router(libros.router)
-
-
