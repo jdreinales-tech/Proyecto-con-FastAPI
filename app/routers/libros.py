@@ -2,7 +2,6 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
-
 from app import models, schemas
 from app.database import get_db
 from app.dependencies import obtener_usuario_actual  # Dependencia JWT actualizada
@@ -60,6 +59,9 @@ def eliminar_libro(
     libro_db = db.query(models.LibroDB).filter(models.LibroDB.id == libro_id).first()
     if not libro_db:
         raise HTTPException(status_code=404, detail="El libro especificado no existe")
+
+    if libro_db.usuario_id != usuario_actual.id and usuario_actual.role != 'admin':
+        raise HTTPException(status_code=403, detail='No tienes permisos para eliminar este libro')
     
     db.delete(libro_db)
     db.commit()
